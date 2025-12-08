@@ -19,6 +19,61 @@ let validationState = { isPhoneValid: false, hasCustomInfo: false, phoneIsDefaul
 let phoneTouched = false;
 
 const DEFAULT_PHONE_DIGITS = "5558675309";
+const DEFAULT_DIGIT_RANGE = { min: 7, max: 11 };
+const REGION_DIGIT_OVERRIDES = {
+    us: 10,
+    ca: 10,
+    pr: 10,
+    ag: 10,
+    ai: 10,
+    bs: 10,
+    bb: 10,
+    bm: 10,
+    dm: 10,
+    do: 10,
+    gd: 10,
+    jm: 10,
+    kn: 10,
+    lc: 10,
+    mf: 10,
+    vc: 10,
+    sx: 10,
+    tt: 10,
+    tc: 10,
+    vi: 10,
+    mx: 10,
+    ar: 10,
+    bo: 8,
+    br: [10, 11],
+    cl: 9,
+    co: 10,
+    cr: 8,
+    ec: 9,
+    sv: 8,
+    fk: [5, 6],
+    gf: 9,
+    gl: [6, 7],
+    gt: 8,
+    gy: [7, 8],
+    ht: 8,
+    hn: 8,
+    ni: 8,
+    pa: 8,
+    py: 9,
+    pe: 9,
+    sr: [7, 8],
+    uy: 8,
+    ve: 10
+};
+const DIGIT_GROUPS = {
+    5: [2, 3],
+    6: [3, 3],
+    7: [3, 4],
+    8: [4, 4],
+    9: [3, 3, 3],
+    10: [3, 3, 4],
+    11: [3, 4, 4]
+};
 
 const PHONE_REGION_FORMATS = {
     NANP: "($1) $2-$3",
@@ -80,9 +135,55 @@ const phoneRegionsConfig = [
 ];
 
 const phoneRegions = phoneRegionsConfig.reduce((map, region) => {
-    map[region.value] = { code: region.code, format: region.format };
+    map[region.value] = {
+        code: region.code,
+        format: region.format,
+        digits: resolveRegionDigits(region),
+        label: region.label
+    };
     return map;
 }, {});
+
+function normalizeDigitRange(value) {
+    if (Array.isArray(value) && value.length) {
+        const min = Math.max(1, Number(value[0]) || DEFAULT_DIGIT_RANGE.min);
+        const max = Math.max(min, Number(value[1]) || min);
+        return { min, max };
+    }
+    if (typeof value === "object" && value !== null && "min" in value) {
+        const min = Math.max(1, Number(value.min) || DEFAULT_DIGIT_RANGE.min);
+        const max = Math.max(min, Number(value.max) || min);
+        return { min, max };
+    }
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+        const normalized = Math.round(parsed);
+        return { min: normalized, max: normalized };
+    }
+    return { ...DEFAULT_DIGIT_RANGE };
+}
+
+function resolveRegionDigits(region) {
+    const override = REGION_DIGIT_OVERRIDES[region.value];
+    if (typeof override !== "undefined") {
+        return normalizeDigitRange(override);
+    }
+    if (region.code === "+1") {
+        return normalizeDigitRange(10);
+    }
+    return normalizeDigitRange(DEFAULT_DIGIT_RANGE);
+}
+
+function getRegionDigits(regionKey) {
+    const region = phoneRegions[regionKey] || phoneRegions.us;
+    return region.digits || normalizeDigitRange(DEFAULT_DIGIT_RANGE);
+}
+
+function formatExpectedLengthText(digitsRange) {
+    return digitsRange.min === digitsRange.max
+        ? `${digitsRange.min}`
+        : `${digitsRange.min}-${digitsRange.max}`;
+}
 
 function populateRegionOptions() {
     inputs.phoneRegion.innerHTML = "";
@@ -112,21 +213,45 @@ const inputs = {
 populateRegionOptions();
 inputs.phoneRegion.value = "us";
 inputs.phoneNumber.value = "";
+applyPhoneConstraints(inputs.phoneRegion.value);
 inputs.phoneNumber.addEventListener("input", () => {
     phoneTouched = true;
-    const digitsOnly = inputs.phoneNumber.value.replace(/\D/g, "").slice(0, 10);
+    const digitsRange = getRegionDigits(inputs.phoneRegion.value);
+    const digitsOnly = inputs.phoneNumber.value.replace(/\D/g, "").slice(0, digitsRange.max);
     if (inputs.phoneNumber.value !== digitsOnly) {
         inputs.phoneNumber.value = digitsOnly;
     }
     renderSignature();
 });
-inputs.phoneRegion.addEventListener("change", renderSignature);
+inputs.phoneRegion.addEventListener("change", () => {
+    applyPhoneConstraints(inputs.phoneRegion.value);
+    const digitsRange = getRegionDigits(inputs.phoneRegion.value);
+    const digitsOnly = inputs.phoneNumber.value.replace(/\D/g, "").slice(0, digitsRange.max);
+    if (inputs.phoneNumber.value !== digitsOnly) {
+        inputs.phoneNumber.value = digitsOnly;
+    }
+    renderSignature();
+});
 inputs.email.addEventListener("input", () => {
     const normalized = inputs.email.value.toLowerCase();
     if (inputs.email.value !== normalized) {
         inputs.email.value = normalized;
     }
 });
+
+function applyPhoneConstraints(regionKey) {
+    const digitsRange = getRegionDigits(regionKey);
+    const pattern = digitsRange.min === digitsRange.max
+        ? `\\d{${digitsRange.min}}`
+        : `\\d{${digitsRange.min},${digitsRange.max}}`;
+
+    inputs.phoneNumber.maxLength = String(digitsRange.max);
+    inputs.phoneNumber.pattern = pattern;
+    const hint = digitsRange.min === digitsRange.max
+        ? `${digitsRange.min}-digit phone number`
+        : `${digitsRange.min} to ${digitsRange.max}-digit phone number`;
+    inputs.phoneNumber.title = `Enter a ${hint}.`;
+}
 
 // Escape HTML entities so users cannot inject markup into the signature
 function escapeHtml(value) {
@@ -140,9 +265,10 @@ function escapeHtml(value) {
 
 function getSignatureData() {
     const regionKey = inputs.phoneRegion.value;
-    const cleanNumber = inputs.phoneNumber.value.replace(/\D/g, "").slice(0, 10);
+    const digitsRange = getRegionDigits(regionKey);
+    const cleanNumber = inputs.phoneNumber.value.replace(/\D/g, "").slice(0, digitsRange.max);
     const region = phoneRegions[regionKey] || phoneRegions.us;
-    const isPhoneValid = cleanNumber.length === 10;
+    const isPhoneValid = cleanNumber.length >= digitsRange.min && cleanNumber.length <= digitsRange.max;
     const phoneIsDefault = cleanNumber === DEFAULT_PHONE_DIGITS;
     const phoneValue = isPhoneValid
         ? formatInternationalNumber(region, cleanNumber)
@@ -161,9 +287,10 @@ function getSignatureData() {
         phoneError.textContent = "";
     } else if (phoneTouched) {
         inputs.phoneNumber.setAttribute("aria-invalid", "true");
+        const expectedLengthText = formatExpectedLengthText(digitsRange);
         phoneError.textContent = cleanNumber.length === 0
             ? "Phone number is required."
-            : "Enter a 10-digit phone number.";
+            : `Enter a ${expectedLengthText}-digit phone number.`;
     } else {
         inputs.phoneNumber.removeAttribute("aria-invalid");
         phoneError.textContent = "";
@@ -181,27 +308,43 @@ function getSignatureData() {
 }
 
 function formatInternationalNumber(region, digits) {
-    const parts = digits.match(/(\d{3})(\d{3})(\d{4})/);
-    if (!parts) {
-        return `${region.code} ${digits}`.trim();
+    if (!digits) {
+        return `${region.code}`.trim();
     }
-    const [, first, second, third] = parts;
-
-    switch (region.format) {
-        case "($1) $2-$3":
-            return `${region.code} (${first}) ${second}-${third}`;
-        case "$1 $2 $3":
-            return `${region.code} ${first} ${second} ${third}`;
-        default:
-            return `${region.code} ${first} ${second} ${third}`;
-    }
+    const grouped = formatDigitsWithGrouping(region, digits);
+    return `${region.code} ${grouped}`.trim();
 }
 
 function formatPartialNumber(region, digits) {
     if (!digits) {
         return "";
     }
-    return `${region.code} ${digits}`;
+    const grouped = formatDigitsWithGrouping(region, digits);
+    return `${region.code} ${grouped}`.trim();
+}
+
+function formatDigitsWithGrouping(region, digits) {
+    const digitsLength = digits.length;
+    if (region.format === PHONE_REGION_FORMATS.NANP && digitsLength === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    const defaultGroups = region.digits ? DIGIT_GROUPS[region.digits.max] : undefined;
+    const groupPlan = region.groups
+        || DIGIT_GROUPS[digitsLength]
+        || defaultGroups
+        || [digitsLength];
+
+    const parts = [];
+    let cursor = 0;
+    for (const size of groupPlan) {
+        if (cursor >= digitsLength) {
+            break;
+        }
+        const next = Math.min(cursor + size, digitsLength);
+        parts.push(digits.slice(cursor, next));
+        cursor = next;
+    }
+    return parts.join(" ");
 }
 
 function arrayBufferToBase64(buffer) {
@@ -445,24 +588,18 @@ function toggleCopyState(isReady, state = validationState) {
 function buildSignatureHtml(data) {
     const logoSrc = logoDataUrl || fallbackLogoDataUrl || logoAssetUrl;
     return `
-<table class="signature-export" cellpadding="0" cellspacing="0" role="presentation" style="font-family: 'Univers Next Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif; color:#000000; background:#ffffff; max-width:360px;">
+<table class="signature-export" cellpadding="0" cellspacing="0" role="presentation" style="font-family: 'Univers Next Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif; color:#000000; background:#ffffff; max-width:460px;">
     <tr>
         <td style="padding:0;">
-            <table cellpadding="0" cellspacing="0" role="presentation" style="width:100%; font-size:14px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" style="width:100%; font-size:14px; line-height:1.6;">
                 <tr>
-                    <td style="padding-bottom:16px;">
+                    <td style="vertical-align:top; padding:0 16px 0 0; width:120px;">
                         <img src="${logoSrc}" alt="ON.energy" width="96" style="display:block; border-radius:16px; background:#ffeb00;">
                     </td>
-                </tr>
-                <tr>
-                    <td style="font-size:18px; font-weight:600; padding-bottom:4px;">${escapeHtml(data.name)}</td>
-                </tr>
-                <tr>
-                    <td style="color:#8f8f8f; font-size:14px; padding-bottom:16px;">${escapeHtml(data.title)}</td>
-                </tr>
-                <tr>
-                    <td style="color:#000000; font-size:14px; line-height:1.6;">
-                        <div><span style="font-weight:600;">P:</span> ${escapeHtml(data.phone)}</div>
+                    <td style="vertical-align:top; padding:0;">
+                        <div style="font-size:18px; font-weight:600; padding-bottom:4px;">${escapeHtml(data.name)}</div>
+                        <div style="color:#8f8f8f; font-size:14px; padding-bottom:12px;">${escapeHtml(data.title)}</div>
+                        <div style="padding-bottom:4px;"><span style="font-weight:600;">P:</span> ${escapeHtml(data.phone)}</div>
                         <div><span style="font-weight:600;">E:</span> <a href="mailto:${escapeHtml(data.email)}" style="color:#000000; text-decoration:none;">${escapeHtml(data.email)}</a></div>
                     </td>
                 </tr>
