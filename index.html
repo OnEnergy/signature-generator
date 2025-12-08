@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ON.energy Signature Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="page">
+        <section class="panel form-panel">
+            <h1>ON.energy Signature Generator</h1>
+            <p class="intro">Fill in your details to create a Gmail-ready email signature that matches the ON.energy brand.</p>
+            <form id="signature-form" autocomplete="off">
+                <label class="field">
+                    <span class="field__label">Name</span>
+                    <input id="name" name="name" type="text" placeholder="Sterling Archer" required>
+                </label>
+                <label class="field">
+                    <span class="field__label">Title</span>
+                    <input id="title" name="title" type="text" placeholder="World's Greatest Secret Agent" required>
+                </label>
+                <div class="field field--phone">
+                    <span class="field__label">Phone Number</span>
+                    <div class="phone-inputs">
+                        <label class="sr-only" for="phone-region">Country/Region</label>
+                        <select id="phone-region" name="phone-region" required></select>
+                        <label class="sr-only" for="phone-number">10 digit number</label>
+                        <input id="phone-number" name="phone-number" type="tel" inputmode="numeric" maxlength="10" pattern="\d{10}" title="Enter exactly 10 digits" placeholder="5558675309" required>
+                    </div>
+                    <p class="field__error" id="phone-error" role="alert" aria-live="polite"></p>
+                </div>
+                <label class="field">
+                    <span class="field__label">E-mail Address</span>
+                    <input id="email" name="email" type="email" placeholder="sterling.archer@on.energy" required>
+                </label>
+            </form>
+            <div class="actions">
+                <button type="button" id="copy-html" class="btn primary">Copy Signature</button>
+                <span id="copy-feedback" role="status" aria-live="polite"></span>
+            </div>
+            <details class="help-block">
+                <summary>How to use in Gmail</summary>
+                <ol>
+                    <li>Click <q>Copy Signature</q>.</li>
+                    <li>Open Gmail settings ➜ <q>See all settings</q> ➜ <q>Signature</q>.</li>
+                    <li>Create a new signature and paste the copied content.</li>
+                    <li>Choose the new signature for <q>Default</q> on new emails and replies/forwards.</li>
+                    <li>Save changes.</li>
+                </ol>
+            </details>
+        </section>
+        <section class="panel preview-panel">
+            <h2>Live Preview</h2>
+            <div id="signature-preview" class="signature-preview"></div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
