@@ -42,7 +42,7 @@ main.page {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 32px;
-    max-width: 1024px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
@@ -220,19 +220,19 @@ main.page {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 320px;
+    min-height: 400px;
 }
 
 .signature-preview > * {
     background: transparent;
     border-radius: 0;
     padding: 0;
-    max-width: 380px;
-    width: 100%;
+    max-width: none;
+    width: auto;
 }
 
 .signature-preview table {
-    width: 100%;
+    width: auto;
 }
 
 .signature-preview td {
