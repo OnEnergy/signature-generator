@@ -144,60 +144,6 @@ main.page {
     background: #fbfbfb;
 }
 
-.field--switch .switch {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.field--switch .switch input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.field--switch .switch__track {
-    position: relative;
-    width: 48px;
-    height: 26px;
-    background: var(--border);
-    border-radius: 999px;
-    transition: background 120ms ease;
-}
-
-.field--switch .switch__thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
-    transition: transform 140ms ease;
-}
-
-.field--switch input:checked + .switch__track {
-    background: var(--brand-black);
-}
-
-.field--switch input:checked + .switch__track .switch__thumb {
-    transform: translateX(22px);
-}
-
-.field--switch input:focus-visible + .switch__track {
-    outline: 2px solid var(--brand-yellow);
-    outline-offset: 3px;
-}
-
-.field--switch .switch__text {
-    font-size: 12px;
-    color: var(--brand-grey);
-}
-
 .field--phone .phone-inputs input,
 .field--phone .phone-inputs select {
     width: auto;
@@ -272,16 +218,16 @@ main.page {
     padding: 32px;
     background: #ffffff;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 320px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 420px;
 }
 
 .signature-preview > * {
     background: transparent;
     border-radius: 0;
     padding: 0;
-    max-width: 380px;
+    max-width: 760px;
     width: 100%;
 }
 
