@@ -393,7 +393,7 @@ function buildSignatureHtml(data) {
     return `
 <table class="signature-export" cellpadding="0" cellspacing="0" role="presentation" style="font-family: 'Univers Next Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif; color:#000000; background:#ffffff; max-width:720px;">
     <tr>
-        <td style="height:16px; line-height:16px; font-size:0;">&nbsp;</td>
+        <td style="height:8px; line-height:8px; font-size:0;">&nbsp;</td>
     </tr>
     <tr>
         <td style="padding:0 0 8px 0;">
